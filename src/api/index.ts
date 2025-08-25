@@ -1,7 +1,9 @@
-import { createAxios } from '@/utils/axios.ts'
+import { createAxiosController } from '@/utils/axios.ts'
+import { router } from '@/router'
 //interface
-import type { RequestConfig } from '@/utils/axios.ts'
+import type { RequestConfig, AxiosController } from '@/utils/axios.ts'
 
+// const router = useRouter()
 const path: string = `${window.location.protocol}//${import.meta.env.VITE_AXIOS_BASE_URL ?? window.location.hostname}${import.meta.env.VITE_AXIOS_BASE_PORT ?? ':' + window.location.port}`
 const baseConfig: RequestConfig = {
     baseURL: path,
@@ -9,39 +11,25 @@ const baseConfig: RequestConfig = {
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        withCredentials: true,
+        withCredentials: 'false',
         //'think-lang': config.lang.defaultLang,
+    },
+
+    b_option: {
+        onLogout: () => {
+            // TODO: Implement logout logic
+            router.push('/login')
+        },
     },
 }
 
 /*
  * 创建实例
  */
-const instanceAxios: Axios = new createAxios(baseConfig)
-
+const axiosController: AxiosController = createAxiosController(baseConfig)
+const api = axiosController.axiosInstance
 /*
  * 封装
  */
 
-class Axios {
-    private static instance: AxiosInstance | null = null
-    private static config: RequestConfig | null = null
-
-    private constructor() {}
-
-    static getInstance(config?: RequestConfig): AxiosInstance {
-        if (!Axios.instance) {
-            if (!config) {
-                throw new Error('Config required for first initialization')
-            }
-            Axios.config = config
-            Axios.instance = axios.create(config)
-            console.info('创建 axios 实例')
-        }
-        return Axios.instance
-    }
-}
-
-export function createAxiosInstance(config: RequestConfig): AxiosInstance {
-    return Axios.getInstance(config)
-}
+export { axiosController as apiController, api }

@@ -32,9 +32,15 @@ interface RequestConfig extends AxiosRequestConfig {
     baseURL: string
     headers?: Record<string, string>
     timeout?: number
+    withCredentials?: boolean
 
     // internal used
     retryCount?: number
+    b_option?: AxiosCustomOptions
+}
+
+interface AxiosCustomOptions {
+    onLogout?: () => void
 }
 
 interface TokenInfo {
@@ -43,39 +49,39 @@ interface TokenInfo {
     expiresAt: number
 }
 
-class Axios {
-    private static instance: AxiosInstance
+class AxiosController {
+    private static instance: AxiosController
+    public axiosInstance: AxiosInstance
     private static reqConfig: RequestConfig
 
-    // 实例属性
-
-    // 功能性配置
-    // TODO : 接受传入参数
+    //
+    private onLogout?: () => void
     private maxRetryCount = 2
 
     private constructor(baseConfig: RequestConfig) {
-        console.info('创建 axios 实例')
-        Axios.instance = axios.create(baseConfig)
-        Axios.reqConfig = baseConfig
-        // 请求拦截
+        console.info('创建 AxiosController 实例')
+        // 原生 axios 实例
+        this.axiosInstance = axios.create(baseConfig)
+        AxiosController.reqConfig = baseConfig
+        this.onLogout = baseConfig.b_option?.onLogout
         this.setupInterceptors()
     }
 
-    static getInstance(config: RequestConfig): AxiosInstance {
-        if (!Axios.instance) {
-            new Axios(config)
+    static getInstance(config: RequestConfig): AxiosController {
+        if (!AxiosController.instance) {
+            AxiosController.instance = new AxiosController(config)
         }
-        return Axios.instance
+        return AxiosController.instance
     }
 
     private setupInterceptors() {
-        Axios.instance.interceptors.request.use(
+        this.axiosInstance.interceptors.request.use(
             // 中间件，对每个处理方法，注入了成功和失败回调方法
             (config) => this.handleRequest(config),
             (error) => this.handleRequestError(error),
         )
 
-        Axios.instance.interceptors.response.use(
+        this.axiosInstance.interceptors.response.use(
             (response) => this.handleResponse(response),
             (error) => this.handleResponseError(error),
         )
@@ -133,7 +139,7 @@ class Axios {
                 },
                 {
                     // static reqConfig
-                    baseURL: Axios.reqConfig.baseURL,
+                    baseURL: AxiosController.reqConfig.baseURL,
                     timeout: 10000,
                     headers: {
                         'Content-Type': 'application/json',
@@ -165,18 +171,19 @@ class Axios {
             // 刷新失败，清除所有token信息并重定向到登录页
             this.clearTokenInfo()
             // TODO : 注入 刷新失败手柄函数
-            const handle = () => void 0
-            this.handleTokenRefreshFailure(handle)
+            // const handle = () => void 0
+            this.handleTokenRefreshFailure()
             throw error
         }
     }
 
-    private handleTokenRefreshFailure(cb: () => void) {
+    private handleTokenRefreshFailure() {
         // TODO : i18n
         console.warn('Token refresh failed, redirecting to login')
 
         // TODO : 跳转逻辑，注入函数
-        cb()
+
+        this.logout()
     }
 
     // 获取确定有效的 token
@@ -265,7 +272,7 @@ class Axios {
                     // 更新请求头
                     config.headers['Authorization'] = `Bearer ${newAccessToken}`
                     // 重新发送请求
-                    return Axios.instance.request(config)
+                    return this.axiosInstance.request(config)
                 }
             } catch (refreshError) {
                 // TODO : 可配置 重定向
@@ -285,7 +292,7 @@ class Axios {
             await new Promise((resolve) => setTimeout(resolve, delay))
 
             config.retryCount++
-            return Axios.instance.request(config)
+            return this.axiosInstance.request(config)
         }
 
         let errorMessage = 'Request failed'
@@ -344,6 +351,10 @@ class Axios {
 
     public logout(): void {
         this.clearTokenInfo()
+        // TODO ： 跳转到登录页
+        if (this.onLogout) {
+            this.onLogout()
+        }
     }
 
     public isAuthenticated(): boolean {
@@ -354,8 +365,12 @@ class Axios {
     //
 }
 
-export function createAxios(baseConfig: RequestConfig): AxiosInstance {
-    return Axios.getInstance(baseConfig)
+/**
+ * 获取全局唯一 AxiosController 实例
+ * 用法：const api = createAxiosController(config)
+ */
+export function createAxiosController(baseConfig: RequestConfig): AxiosController {
+    return AxiosController.getInstance(baseConfig)
 }
 
-export type { RequestConfig }
+export type { RequestConfig, AxiosController }
