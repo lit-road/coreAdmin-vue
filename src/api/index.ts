@@ -1,33 +1,33 @@
-import { Axios } from '@/utils/axios.ts'
+import { createAxios } from '@/utils/axios.ts'
 //interface
-import type {RequestConfig} from '@/utils/axios.ts'
+import type { RequestConfig } from '@/utils/axios.ts'
 
 const path: string = `${window.location.protocol}//${import.meta.env.VITE_AXIOS_BASE_URL ?? window.location.hostname}${import.meta.env.VITE_AXIOS_BASE_PORT ?? ':' + window.location.port}`
-const baseConfig : RequestConfig = {
+const baseConfig: RequestConfig = {
     baseURL: path,
     timeout: 10000,
-    headers:{
+    headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'withCredentials': true,
+        Accept: 'application/json',
+        withCredentials: true,
         //'think-lang': config.lang.defaultLang,
-    }
+    },
 }
 
 /*
  * 创建实例
  */
-const instanceAxios: Axios = new Axios(baseConfig)
+const instanceAxios: Axios = new createAxios(baseConfig)
 
 /*
  * 封装
  */
 
-class Axios{
+class Axios {
     private static instance: AxiosInstance | null = null
     private static config: RequestConfig | null = null
 
-    private constructor(){}
+    private constructor() {}
 
     static getInstance(config?: RequestConfig): AxiosInstance {
         if (!Axios.instance) {

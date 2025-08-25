@@ -17,7 +17,7 @@ import type {
     AxiosInstance,
     AxiosRequestConfig,
     AxiosResponse,
-    InternalAxiosRequestConfig
+    InternalAxiosRequestConfig,
 } from 'axios'
 
 // 业务响应结构
@@ -54,7 +54,6 @@ class Axios {
     private maxRetryCount = 2
 
     private constructor(baseConfig: RequestConfig) {
-
         console.info('创建 axios 实例')
         Axios.instance = axios.create(baseConfig)
         Axios.reqConfig = baseConfig
@@ -73,12 +72,12 @@ class Axios {
         Axios.instance.interceptors.request.use(
             // 中间件，对每个处理方法，注入了成功和失败回调方法
             (config) => this.handleRequest(config),
-            (error) => this.handleRequestError(error)
+            (error) => this.handleRequestError(error),
         )
 
         Axios.instance.interceptors.response.use(
             (response) => this.handleResponse(response),
-            (error) => this.handleResponseError(error)
+            (error) => this.handleResponseError(error),
         )
     }
 
@@ -127,16 +126,20 @@ class Axios {
         try {
             // 使用原生 axios 避免拦截器循环调用
             // TODO ： 配置API path
-            const response = await axios.post('/auth/refresh', {
-                refreshToken
-            }, {
-                // static reqConfig
-                baseURL: Axios.reqConfig.baseURL,
-                timeout: 10000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
+            const response = await axios.post(
+                '/auth/refresh',
+                {
+                    refreshToken,
+                },
+                {
+                    // static reqConfig
+                    baseURL: Axios.reqConfig.baseURL,
+                    timeout: 10000,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                },
+            )
 
             const { data } = response.data as ResponseData<{
                 accessToken: string
@@ -152,13 +155,12 @@ class Axios {
             const newTokenInfo: TokenInfo = {
                 accessToken: data.accessToken,
                 refreshToken: data.refreshToken,
-                expiresAt: Date.now() + (data.expiresIn * 1000)
+                expiresAt: Date.now() + data.expiresIn * 1000,
             }
 
             // 设置本地存储
             this.setTokenInfo(newTokenInfo)
             return data.accessToken
-
         } catch (error) {
             // 刷新失败，清除所有token信息并重定向到登录页
             this.clearTokenInfo()
@@ -224,7 +226,9 @@ class Axios {
 
     // 暂时定制
     // 双 token 设计
-    private async handleRequest(config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> {
+    private async handleRequest(
+        config: InternalAxiosRequestConfig,
+    ): Promise<InternalAxiosRequestConfig> {
         // 确认 token 有效
         // const accessToken = localStorage.getItem('accessToken')
         const accessToken = await this.ensureValidToken()
@@ -276,9 +280,9 @@ class Axios {
         // TODO ： 重试机制
         if (config && this.shouldRetry(error) && (config.retryCount || 0) < this.maxRetryCount) {
             // TODO : 延时，每次翻倍
-            config.retryCount = (config.retryCount || 0)
+            config.retryCount = config.retryCount || 0
             const delay = Math.pow(2, config.retryCount!) * 1000
-            await new Promise(resolve => setTimeout(resolve, delay))
+            await new Promise((resolve) => setTimeout(resolve, delay))
 
             config.retryCount++
             return Axios.instance.request(config)
@@ -317,7 +321,7 @@ class Axios {
             // TODO : 定义结构体
             message: errorMessage,
             code: status,
-            config
+            config,
         })
     }
 
@@ -353,3 +357,5 @@ class Axios {
 export function createAxios(baseConfig: RequestConfig): AxiosInstance {
     return Axios.getInstance(baseConfig)
 }
+
+export type { RequestConfig }
