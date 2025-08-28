@@ -1,13 +1,16 @@
 /*
  * 需求列表
  *
+ * ==基本需求==
  * - 单例axios 控制器
  * - 响应拦截
  * - 错误处理、重试
+ * * 完整的ts 类型支持
+ *
+ * ==待验证需求==
  * 缓存处理
  * Loading 状态管理
  * 响应数据格式化
- * 完整的ts 类型支持
  * 重复请求识别和取消
  * 请求队列管理
  */
@@ -30,7 +33,7 @@ interface ResponseData<T> {
 
 interface RequestConfig extends AxiosRequestConfig {
     baseURL: string
-    headers?: Record<string, string>
+    headers?: AxiosRequestConfig['headers']
     timeout?: number
     withCredentials?: boolean
 
@@ -71,6 +74,7 @@ class AxiosController {
         if (!AxiosController.instance) {
             AxiosController.instance = new AxiosController(config)
         }
+
         return AxiosController.instance
     }
 
@@ -128,7 +132,11 @@ class AxiosController {
 
     // 使用 refresh token 更新 access token
     private async performTokenRefresh(refreshToken: string): Promise<string> {
-        //
+        // 调试：确认是否进入刷新分支
+        console.log('进入 refrsh api')
+        console.log('axios.post ===', axios.post)
+        console.log('REFRESH CALL', refreshToken)
+
         try {
             // 使用原生 axios 避免拦截器循环调用
             // TODO ： 配置API path
@@ -146,6 +154,20 @@ class AxiosController {
                     },
                 },
             )
+            // console.log('response data ~~~', response, [
+            //     '/auth/refresh',
+            //     {
+            //         refreshToken,
+            //     },
+            //     {
+            //         // static reqConfig
+            //         baseURL: AxiosController.reqConfig.baseURL,
+            //         timeout: 10000,
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //     },
+            // ])
 
             const { data } = response.data as ResponseData<{
                 accessToken: string
@@ -348,6 +370,9 @@ class AxiosController {
     }
 
     // 公共方法
+    public login(tokenInfo: TokenInfo): void {
+        this.setTokenInfo(tokenInfo)
+    }
 
     public logout(): void {
         this.clearTokenInfo()
@@ -362,7 +387,18 @@ class AxiosController {
         return tokenInfo !== null && !this.isTokenExpired(tokenInfo)
     }
 
-    //
+    // 公共方法 -- get等
+    public get<T>(url: string, config?: RequestConfig): Promise<AxiosResponse<T>> {
+        return this.axiosInstance.get<T>(url, config)
+    }
+
+    public post<T>(
+        url: string,
+        data?: Record<string, unknown>,
+        config?: RequestConfig,
+    ): Promise<AxiosResponse<T>> {
+        return this.axiosInstance.post<T>(url, data, config)
+    }
 }
 
 /**
