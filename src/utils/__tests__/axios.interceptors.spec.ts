@@ -1,6 +1,10 @@
 // 响应拦截器相关测试
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createAxiosController, type RequestConfig, type AxiosController } from '../axios'
+
+vi.mock('axios')
+const mockAxios = vi.mocked(axios)
+
 import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from 'axios'
 
 const baseConfig: RequestConfig = {
@@ -16,9 +20,6 @@ interface TokenInfo {
     refreshToken: string
     expiresAt: number
 }
-
-vi.mock('axios')
-const mockAxios = vi.mocked(axios)
 
 const localStorageMock = {
     getItem: vi.fn(),
@@ -42,15 +43,63 @@ describe('Axios Interceptors', () => {
         // 借尸还魂
 
         mockAxiosInstance = {
-            get: vi.fn().mockResolvedValue({
-                data: {},
-                status: 200,
-                statusText: 'OK',
-                headers: {},
-                config: {},
+            // get: vi.fn(),
+            // post: vi.fn().mockImplementation((url: string) => {
+            //     if (url === '/auth/refresh') {
+            //         return Promise.resolve({
+            //             data: {
+            //                 code: 0,
+            //                 data: {
+            //                     accessToken: 'newAccessToken',
+            //                     refreshToken: 'refreshToken',
+            //                     expiresIn: 3600,
+            //                 },
+            //                 message: '',
+            //                 success: true,
+            //             },
+            //         })
+            //     }
+            //     if (url === '/other/api') {
+            //         return Promise.resolve({
+            //             data: {
+            //                 code: 1,
+            //                 data: {},
+            //                 message: 'other',
+            //                 success: false,
+            //             },
+            //         })
+            //     }
+            //     // 默认返回
+            //     return Promise.resolve({ data: {} })
+            // }),
+            post: vi.fn().mockImplementation((url: string) => {
+                if (url === '/auth/refresh') {
+                    return Promise.resolve({
+                        data: {
+                            code: 0,
+                            data: {
+                                accessToken: 'newAccessToken',
+                                refreshToken: 'refreshToken',
+                                expiresIn: 3600,
+                            },
+                            message: '',
+                            success: true,
+                        },
+                    })
+                }
+                if (url === '/other/api') {
+                    return Promise.resolve({
+                        data: {
+                            code: 1,
+                            data: {},
+                            message: 'other',
+                            success: false,
+                        },
+                    })
+                }
+                // 默认返回
+                return Promise.resolve({ data: {} })
             }),
-            post: vi.fn(),
-
             put: vi.fn(),
             delete: vi.fn(),
             patch: vi.fn(),
@@ -77,36 +126,37 @@ describe('Axios Interceptors', () => {
         } as unknown as AxiosInstance
 
         vi.spyOn(mockAxios, 'create').mockReturnValue(mockAxiosInstance)
-        vi.spyOn(mockAxios, 'post').mockImplementation((url: string) => {
-            if (url === '/auth/refresh') {
-                return Promise.resolve({
-                    data: {
-                        code: 0,
-                        data: {
-                            accessToken: 'newAccessToken',
-                            refreshToken: 'refreshToken',
-                            expiresIn: 3600,
-                        },
-                        message: '',
-                        success: true,
-                    },
-                })
-            }
-            if (url === '/other/api') {
-                return Promise.resolve({
-                    data: {
-                        code: 1,
-                        data: {},
-                        message: 'other',
-                        success: false,
-                    },
-                })
-            }
-            // 默认返回
-            return Promise.resolve({ data: {} })
-        })
+        // vi.spyOn(axios, 'post').mockImplementation((url: string) => {
+        //     if (url === '/auth/refresh') {
+        //         return Promise.resolve({
+        //             data: {
+        //                 code: 0,
+        //                 data: {
+        //                     accessToken: 'newAccessToken',
+        //                     refreshToken: 'refreshToken',
+        //                     expiresIn: 3600,
+        //                 },
+        //                 message: '',
+        //                 success: true,
+        //             },
+        //         })
+        //     }
+        //     if (url === '/other/api') {
+        //         return Promise.resolve({
+        //             data: {
+        //                 code: 1,
+        //                 data: {},
+        //                 message: 'other',
+        //                 success: false,
+        //             },
+        //         })
+        //     }
+        //     // 默认返回
+        //     return Promise.resolve({ data: {} })
+        // })
 
         apiController = createAxiosController(baseConfig)
+        // vi.spyOn(apiController.instance, 'instance')
     })
 
     // afterEach(() => {
@@ -158,21 +208,10 @@ describe('Axios Interceptors', () => {
             localStorageMock.getItem.mockReturnValue(JSON.stringify(tokenInfo))
             // TODO：5、token过期后会使用 refresh token 刷新 access token
             // // mock axios.post 刷新 token
-            // vi.spyOn(axios, 'post').mockResolvedValue({
-            //     data: {
-            //         code: 0,
-            //         data: {
-            //             accessToken: 'newAccessToken1',
-            //             refreshToken: 'refreshToken',
-            //             expiresIn: 3600,
-            //         },
-            //         message: '',
-            //         success: true,
-            //     },
-            // })
             // 断言 localStorage.setItem 被调用，说明 token 已刷新
-            await apiController.get('/test/refresh/timeout')
-            console.log('123')
+            const a = await apiController.get('/test/refresh/timeout')
+            console.log(a, 'a', axios.get.mock.calls)
+
             // 对于private 函数进行路径判断
             expect(localStorageMock.setItem).toHaveBeenCalledWith(
                 'tokenInfo',
@@ -190,18 +229,6 @@ describe('Axios Interceptors', () => {
                 expiresAt: Date.now() + 3600 * 1000,
             }
             localStorageMock.getItem.mockReturnValue(JSON.stringify(tokenInfo))
-            // vi.spyOn(axios, 'post').mockResolvedValue({
-            //     data: {
-            //         code: 0,
-            //         data: {
-            //             accessToken: 'newAccessToken',
-            //             refreshToken: 'refreshToken',
-            //             expiresIn: 3600,
-            //         },
-            //         message: '',
-            //         success: true,
-            //     },
-            // })
             await apiController.get('/test/no-access-token')
             // 断言 setItem 被调用，说明 token 已刷新
             expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -220,21 +247,23 @@ describe('Axios Interceptors', () => {
             localStorageMock.getItem.mockReturnValue(JSON.stringify(tokenInfo))
 
             await apiController.get('/test/expired-token')
+            // REFLOG: 如果没有这个。是监听不到axios 被触发的。
+            await requestInterceptor({
+                method: 'GET',
+                url: '/test',
+                headers: {},
+            })
             // 断言 mockAxios.post 调用 '/auth/refresh'，参数只断言第一个即可
-            // console.log('mockAxios.post calls:', mockAxios.post.mock.calls)
-            // console.log('mockAxios.post calls:', axios.post.mock.calls)
-            // console.log(mockAxios.post.mock.calls)
-
-            // expect(mockAxios.post.mock.calls.some((call) => call[0] === '/auth/refresh')).toBe(true)
-            // expect(mockAxios.post).toHaveBeenCalledWith(
-            //     '/auth/refresh',
-            //     expect.anything(),
-            //     expect.anything(),
-            // )
-            // expect(localStorageMock.setItem).toHaveBeenCalledWith(
-            //     'tokenInfo',
-            //     expect.stringContaining('newAccessToken'),
-            // )
+            // REFLOG: 必须用requestInterceptor
+            expect(mockAxios.post).toHaveBeenCalledWith(
+                '/auth/refresh',
+                expect.anything(),
+                expect.anything(),
+            )
+            expect(localStorageMock.setItem).toHaveBeenCalledWith(
+                'tokenInfo',
+                expect.stringContaining('newAccessToken'),
+            )
         })
 
         it('网络错误自动重试', async () => {
@@ -245,6 +274,8 @@ describe('Axios Interceptors', () => {
                 return Promise.resolve({ data: {}, status: 200 })
             })
             await apiController.get('/test/network-retry')
+            console.log(callCount)
+
             expect(callCount).toBeGreaterThan(1)
         })
     })

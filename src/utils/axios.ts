@@ -133,8 +133,6 @@ class AxiosController {
     // 使用 refresh token 更新 access token
     private async performTokenRefresh(refreshToken: string): Promise<string> {
         // 调试：确认是否进入刷新分支
-        console.log('进入 refrsh api')
-        console.log('axios.post ===', axios.post)
         console.log('REFRESH CALL', refreshToken)
 
         try {
@@ -154,20 +152,6 @@ class AxiosController {
                     },
                 },
             )
-            // console.log('response data ~~~', response, [
-            //     '/auth/refresh',
-            //     {
-            //         refreshToken,
-            //     },
-            //     {
-            //         // static reqConfig
-            //         baseURL: AxiosController.reqConfig.baseURL,
-            //         timeout: 10000,
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //         },
-            //     },
-            // ])
 
             const { data } = response.data as ResponseData<{
                 accessToken: string
@@ -389,6 +373,8 @@ class AxiosController {
 
     // 公共方法 -- get等
     public get<T>(url: string, config?: RequestConfig): Promise<AxiosResponse<T>> {
+        console.log('进入 get', url, config, 'this.axiosInstance.get')
+
         return this.axiosInstance.get<T>(url, config)
     }
 
@@ -397,6 +383,8 @@ class AxiosController {
         data?: Record<string, unknown>,
         config?: RequestConfig,
     ): Promise<AxiosResponse<T>> {
+        console.log('进入 post', url, 'this.axiosInstance.post')
+
         return this.axiosInstance.post<T>(url, data, config)
     }
 }
