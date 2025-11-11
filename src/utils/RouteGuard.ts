@@ -1,3 +1,4 @@
+// 路由守卫 暂未使用
 import { router } from '@/router'
 
 export class RouteGuard {
@@ -46,4 +47,8 @@ export class RouteGuard {
     }
 }
 
-export const routeGuard = RouteGuard.getInstance()
+// export const routeGuard = RouteGuard.getInstance()
+// 与 @AxiosController
+export function createRouteGuard(): RouteGuard {
+    return RouteGuard.getInstance()
+}

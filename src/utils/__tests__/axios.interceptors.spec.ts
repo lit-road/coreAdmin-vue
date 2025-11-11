@@ -1,6 +1,6 @@
 // 响应拦截器相关测试
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createAxiosController, type RequestConfig, type AxiosController } from '../axios'
+import { createAxiosController, type RequestConfig, type AxiosController } from '../AxiosController'
 
 vi.mock('axios')
 const mockAxios = vi.mocked(axios)

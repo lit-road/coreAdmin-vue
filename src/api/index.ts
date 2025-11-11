@@ -1,7 +1,7 @@
-import { createAxiosController } from '@/utils/axios.ts'
+import { createAxiosController } from '@/utils/AxiosController'
 import { router } from '@/router'
 //interface
-import type { RequestConfig, AxiosController } from '@/utils/axios.ts'
+import type { RequestConfig, AxiosController } from '@/utils/AxiosController'
 
 // const router = useRouter()
 const path: string = `${window.location.protocol}//${import.meta.env.VITE_AXIOS_BASE_URL ?? window.location.hostname}${import.meta.env.VITE_AXIOS_BASE_PORT ?? ':' + window.location.port}`

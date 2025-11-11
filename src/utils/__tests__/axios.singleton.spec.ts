@@ -1,6 +1,6 @@
 // -[x] 单例模式相关测试
 import { describe, it, expect } from 'vitest'
-import { createAxiosController, type RequestConfig } from '../axios'
+import { createAxiosController, type RequestConfig } from '../AxiosController'
 
 const baseConfig1: RequestConfig = {
     baseURL: 'https://jsonplaceholder.typicode.com',
